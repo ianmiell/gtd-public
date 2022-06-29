@@ -1,0 +1,85 @@
+readonly LAST_TASK_NO_FILE='.metadata/lasttask'
+readonly TASKS_FOLDER='tasks'
+readonly STATUS_FOLDER='status'
+readonly BACKGROUND_STATUS='background'
+readonly CLOSED_STATUS='closed'
+readonly NEW_STATUS='new'
+readonly SOMEDAY_STATUS='someday'
+readonly TODO_STATUS='todo'
+readonly WAITING_STATUS='waiting'
+readonly PRIORITY_FOLDER='priority'
+readonly LOW_PRIORITY='low'
+readonly MEDIUM_PRIORITY='medium'
+readonly HIGH_PRIORITY='high'
+readonly DEFAULT_PRIORITY='medium'
+readonly DEFAULT_STATUS='todo'
+readonly OLD_JIRA_FOLDER='jira_old'
+readonly PEOPLE_FOLDER='people'
+readonly NOTES_FILE='notes.asciidoc'
+
+readonly REMINDME_FILE='.remindme'
+readonly REMINDME_REPEAT_FILE='.repeat'
+readonly BIRTHDAY_FILE='.birthday'
+readonly CREATED_DATE_FILE='.created_date'
+
+export LAST_TASK_NO_FILE TASKS_FOLDER STATUS_FOLDER BACKGROUND_STATUS CLOSED_STATUS NEW_STATUS SOMEDAY_STATUS TODO_STATUS WAITING_STATUS PRIORITY_FOLDER LOW_PRIORITY MEDIUM_PRIORITY HIGH_PRIORITY DEFAULT_STATUS DEFAULT_PRIORITY OLD_JIRA_FOLDER PEOPLE_FOLDER NOTES_FILE REMINDME_FILE REMINDME_REPEAT_FILE BIRTHDAY_FILE CREATED_DATE_FILE
+
+function is_num {
+	if [[ "${1}" =~ ^[0-9]+$ ]]
+	then
+		echo 0
+	else
+		echo 1
+	fi
+}
+
+function convert_to_shortname {
+	if [[ "${1}" = 'b' ]]; then
+		echo 'background'
+	elif [[ "${1}" = 'c' ]]; then
+		echo 'closed'
+	elif [[ "${1}" = 'h' ]]; then
+		echo 'high'
+	elif [[ "${1}" = 'l' ]]; then
+		echo 'low'
+	elif [[ "${1}" = "n" ]]; then
+		echo 'new'
+	elif [[ "${1}" = 's' ]]; then
+		echo 'someday'
+	elif [[ "${1}" = 't' ]]; then
+		echo 'todo'
+	elif [[ "${1}" = 'w' ]]; then
+		echo 'waiting'
+	elif [[ "${1}" = 'm' ]]; then
+		echo 'medium'
+	else
+		echo "${1}"
+	fi
+}
+
+function assert_is_num {
+	if ! [[ "${1}" =~ ^[0-9]+$ ]]
+	then
+		echo "${1} is not a number"
+		exit 1
+	fi
+}
+
+function extract_task_number_from_notes_file {
+	EXTRACTED_TASK_NUMBER="${1/${ROOT_FOLDER}\/${STATUS_FOLDER}\/${TODO_STATUS}\//}"
+	EXTRACTED_TASK_NUMBER="${EXTRACTED_TASK_NUMBER/\/${NOTES_FILE}/}"
+	echo "${EXTRACTED_TASK_NUMBER}"
+}
+
+# https://misc.flogisoft.com/bash/tip_colors_and_formatting
+function embolden {
+	echo -n -e '\033[1m'"${1}"'\033[0m'
+}
+
+function parse_date_in_seconds {
+	date -d @"${1}" 2>/dev/null || gdate -d @"${1}"
+}
+
+function show_git_status {
+	git status -s | tail
+}

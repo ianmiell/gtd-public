@@ -1,0 +1,6 @@
+#!/bin/bash
+if [[ $(basename "$0") != 'gtd' ]]
+then
+	echo "Must be called as 'gtd', not ${0}"
+	exit 1
+fi

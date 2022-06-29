@@ -1,0 +1,31 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-go - task number"
+	echo ""
+	./gtd-help
+fi
+set -u
+readonly GOTO_TASK_NO="${1}"
+assert_is_num "${GOTO_TASK_NO}"
+
+(
+cd "${ROOT_FOLDER}/${TASKS_FOLDER}/${GOTO_TASK_NO}" || return
+ls
+head -1 "${NOTES_FILE}"
+set +o nounset
+if [[ $ZSH_NAME == 'zsh' ]]
+then
+  zsh
+elif [[ $SHELL == '/bin/bash' ]]
+then
+  bash
+else
+  zsh
+fi
+set -o nounset
+)

@@ -1,0 +1,10 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+(
+cd "${ROOT_FOLDER}" || return
+git stash
+git pull --rebase
+git stash pop
+)

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# FUNCTIONS
+# Cleanup function
+function cleanup {
+	true
+}
+
+function error {
+	echo "$1"
+	exit 1
+}
+
+# Trap exit.
+trap cleanup EXIT
+
+# Move folder
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "${SOURCE}" ]; do # resolve $SOURCE until the file is no longer a symlink
+  BIN_DIR="$(cd -P "$(dirname "$SOURCE}")" && pwd)"
+  readonly BIN_DIR
+  SOURCE="$(readlink "${SOURCE}")"
+  [[ ${SOURCE} != /* ]] && SOURCE="${BIN_DIR}/${SOURCE}" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$(cd -P "$(dirname "${SOURCE}")" && pwd)"
+readonly DIR
+# Move to this directory
+cd "${DIR}"
+# Get the absolute root folder of the repo.
+ROOT_FOLDER="$(realpath "$(dirname "$(pwd)")")"
+readonly ROOT_FOLDER
+
+# source shared files
+source ./globals
+source ./gtd-call-check
+
+# VALIDATION
+if [[ $1 = '' ]]
+then
+	source ./gtd-help
+fi
+
+# SHELL OPTIONS
+# Error if vars unset from here, after validation
+set -o nounset
+set -o errexit
+
+# if file does not exist, call gtd-help
+GTD_ARG="${1}"
+# If the arg is just a number, then go to it.
+if [[ $(is_num "${1}") == "0" ]]
+then
+	source gtd-go "${GTD_ARG}"
+elif [[ -a gtd-${GTD_ARG} ]]
+then
+	# shellcheck source=/dev/null
+	source ./gtd-"$@"
+else
+	${ROOT_FOLDER}/bin/gtd search "${1}"
+	cleanup
+fi

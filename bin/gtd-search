@@ -1,0 +1,122 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-newtask - search term"
+	echo ""
+	./gtd-help
+fi
+set -u
+SEARCH_TERM="${1}"
+
+embolden '================================================================================\n'
+# First, search for subjects in to-do status
+embolden "SUBJECT NOTES SEARCH IN TODO STATUS\n"
+# Use line one of the notes file
+RESULTS="$(grep -ni "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | grep -w 1 | awk '{print $1}')"
+readonly RESULTS
+if [[ $RESULTS != '' ]]
+then
+	echo '________________________________________________________________________________'
+	for f in $RESULTS
+	do
+		echo Next item, hit return
+		read -r
+		f=${f/${NOTES_FILE}*/${NOTES_FILE}}
+		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
+		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
+		head -1 "${f}" | sed 's/^[= ]*//'
+		echo '________________________________________________________________________________'
+	done
+fi
+
+embolden '================================================================================\n'
+embolden "SUBJECT NOTES IN UN-CLOSED TICKETS\n"
+# Then, search everything else, except closed and old JIRA
+MATCHING_FILES=$(grep -RinlI --exclude-dir="${PEOPLE_FOLDER}" --exclude-dir="${OLD_JIRA_FOLDER}" --exclude-dir="${CLOSED_STATUS}" "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}" 2>/dev/null)
+readonly MATCHING_FILES
+for f in ${MATCHING_FILES}
+do
+	if head -1 "${f}" | grep -i "${SEARCH_TERM}" >/dev/null 2>&1
+	then
+		echo Next item, hit return
+		read -r
+		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
+		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
+		head -1 "${f}" | sed 's/^[= ]*//'
+		echo '________________________________________________________________________________'
+	fi
+done
+
+if [[ "${MATCHING_FILES}" == '1' ]]
+then
+	echo '================================================================================'
+	echo Enter to continue
+	read -r
+	echo '================================================================================'
+	echo
+fi
+
+embolden '================================================================================\n'
+# First, search for subjects in closed status
+embolden "SUBJECT NOTES SEARCH IN CLOSED STATUS\n"
+# Use line one of the notes file
+CLOSED_MATCHES="$(grep -ni "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | grep -w 1 | awk '{print $1}')"
+readonly CLOSED_MATCHES
+if [[ $CLOSED_MATCHES != '' ]]
+then
+	echo '________________________________________________________________________________'
+	for f in $CLOSED_MATCHES
+	do
+		echo Next item, hit return
+		read -r
+		f=${f/${NOTES_FILE}*/${NOTES_FILE}}
+		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
+		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
+		head -1 "${f}" | sed 's/^[= ]*//'
+		echo '________________________________________________________________________________'
+	done
+fi
+
+embolden '================================================================================\n'
+embolden "OTHER MATCHES, GREPS\n"
+for f in ${MATCHING_FILES}
+do
+	read -r
+	echo '________________________________________________________________________________'
+	embolden "grep matches in file: ${f}, here is the grep output\n"
+	grep -iHnA2 "${SEARCH_TERM}" "${f}"
+	echo '________________________________________________________________________________'
+done
+
+embolden '================================================================================\n'
+if [[ ${MATCHING_FILES} != '' ]]
+then
+	echo Enter to continue
+	read -r
+	echo '================================================================================'
+	echo
+fi
+
+embolden '================================================================================\n'
+embolden "CLOSED AND OLD JIRA MATCHING FILES\n"
+# Then, search everything, but only give file names
+OTHER_MATCHING_FILES=$(grep -RinlI "${SEARCH_TERM}" "${ROOT_FOLDER}/${OLD_JIRA_FOLDER}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}" "${ROOT_FOLDER}/${PEOPLE_FOLDER}" 2>/dev/null | sort)
+readonly OTHER_MATCHING_FILES
+for file in ${OTHER_MATCHING_FILES}
+do
+	echo Next item, hit return
+	read -r
+	echo '________________________________________________________________________________'
+	#if head -1 "${file}" | grep -i "${SEARCH_TERM}"
+	#then
+		echo "${file}: $(grep -iHnA2 "${SEARCH_TERM}" "${file}")"
+	#else
+	#	echo "${file}"
+	#fi
+	echo '________________________________________________________________________________'
+done
+embolden '================================================================================\n'
+echo

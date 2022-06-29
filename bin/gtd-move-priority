@@ -1,0 +1,46 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+function usage {
+	echo ""
+	echo "${ROOT_FOLDER}/bin/gtd move-status NEW_PRIORITY [TASKNO]"
+	echo ""
+}
+
+# Process args
+set +o nounset
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-mv - newpriority"
+	usage
+fi
+NEW_PRIORITY="$(convert_to_shortname "${1}")"
+readonly NEW_PRIORITY
+if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${2}" == "" ]]
+then
+	echo "Argument required to gtd-mv - task_no"
+	usage
+fi
+WORKING_TASK_NO="${2}"
+readonly WORKING_TASK_NO
+# Check arg 3 is a number and task exists
+assert_is_num "${WORKING_TASK_NO}"
+if [[ ! -d "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}" ]]
+then
+	echo "Task ${WORKING_TASK_NO} appears not to exist"
+	usage
+fi
+set -o nounset
+
+OLD_PRIORITY_LN=$(echo "${ROOT_FOLDER}/${PRIORITY_FOLDER}"/*/"${WORKING_TASK_NO}")
+readonly OLD_PRIORITY_LN
+# find current status, mv it to new one
+(
+cd "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${NEW_PRIORITY}" && ln -sf "../../${TASKS_FOLDER}/${WORKING_TASK_NO}" .
+rm -f "${OLD_PRIORITY_LN}"
+)
+
+# Add to git
+git add "${ROOT_FOLDER}"
+show_git_status

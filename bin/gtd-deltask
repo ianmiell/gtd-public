@@ -1,0 +1,23 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-deltask - number"
+	echo ""
+	./gtd-help
+fi
+set -u
+TASK_NO="${1}"
+assert_is_num "${TASK_NO}"
+
+# Add new folder for task
+rm -rf "${ROOT_FOLDER:?}/${TASKS_FOLDER:?}/${TASK_NO:?}"
+rm "${ROOT_FOLDER:?}/${PRIORITY_FOLDER:?}"/*/"${TASK_NO:?}"
+rm "${ROOT_FOLDER:?}/${STATUS_FOLDER:?}"/*/"${TASK_NO:?}"
+
+# Add to git
+git add "${ROOT_FOLDER}"
+show_git_status

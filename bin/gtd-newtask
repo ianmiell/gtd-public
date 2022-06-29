@@ -1,0 +1,41 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-newtask - subject"
+	echo ""
+	./gtd-help
+fi
+set -u
+SUBJECT="${1}"
+
+# Get last task number and upgrade it
+LAST_TASK_NO="$(cat "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}")"
+NEW_TASK_NO="$((LAST_TASK_NO+1))"
+echo "${NEW_TASK_NO}" > "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}"
+
+# Add new folder for task
+NEW_TASKFOLDER="${ROOT_FOLDER}/${TASKS_FOLDER}/${NEW_TASK_NO}"
+mkdir -p "${NEW_TASKFOLDER}"
+date +%s > "${NEW_TASKFOLDER}/${CREATED_DATE_FILE}"
+echo -e "= ${SUBJECT}\n" > "${NEW_TASKFOLDER}/${NOTES_FILE}"
+
+(
+cd "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}" && ln -s "../../${TASKS_FOLDER}/${NEW_TASK_NO}" "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}"
+)
+
+(
+cd "${ROOT_FOLDER}/${STATUS_FOLDER}/${DEFAULT_STATUS}" && ln -s "../../${TASKS_FOLDER}/${NEW_TASK_NO}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${DEFAULT_STATUS}"
+)
+
+# Git add
+git add "${NEW_TASKFOLDER}"
+git add "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}/${NEW_TASK_NO}"
+git add "${ROOT_FOLDER}/${STATUS_FOLDER}/${DEFAULT_STATUS}/${NEW_TASK_NO}"
+git add "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}"
+show_git_status
+
+${ROOT_FOLDER}/bin/gtd go "${NEW_TASK_NO}"

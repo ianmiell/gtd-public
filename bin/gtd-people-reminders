@@ -1,0 +1,29 @@
+#!/bin/bash
+
+source ./gtd-call-check
+${ROOT_FOLDER}/bin/gtd check-git-clean
+
+# Find all people that need contacting
+for file in $(find "${ROOT_FOLDER}"/"${PEOPLE_FOLDER}" -name '*.last_contacted')
+do
+	person=${file%.*}
+	# if date in file > 90 days ago
+	if [[ "$(date -d "-60 days" +%s)" -gt "$(head -1 "$file")" ]]
+	then
+		# email yourself reminding to contact
+		(
+			cd "${ROOT_FOLDER}/bin" && python mail.py --message "Time to contact: ${person}\n$(cat "${person}".asciidoc)"
+		)
+		# update last_contacted with current date
+		git pull --rebase
+		date +%s > "${file}"
+		(
+			echo -n "Last contact: "
+			date
+			echo -n "Next contact: "
+			date -d "+90 days"
+		) >> "${file}"
+		git commit -am 'latest'
+		git push
+	fi
+done

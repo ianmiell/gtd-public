@@ -1,0 +1,25 @@
+#!/bin/bash
+source ./gtd-call-check
+source ./gtd-check-git-clean
+
+case ${1} in
+  h) PRIORITY="high";;
+  l) PRIORITY="low";;
+  m) PRIORITY="medium";;
+  *) PRIORITY="${1}"
+esac
+
+
+RESULT="$(ls "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${PRIORITY}/*/${NOTES_FILE}" 2> /dev/null)"
+readonly RESULT
+if [[ ${RESULT} == '' ]]
+then
+	echo "No tasks in priority: ${PRIORITY}"
+else
+	echo "TASKS WITH PRIORITY: ${PRIORITY}"
+	for task in ${RESULT}
+	do
+		echo "${task}: $(cat "${task}")"
+	done
+fi
+

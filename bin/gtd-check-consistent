@@ -1,0 +1,10 @@
+#!/bin/bash
+# Check that there are no inconsistencies
+(
+DUPES=$(basename ../status/*/[0-9]* | sort -n | uniq -d)
+if [[ ${DUPES} != '' ]]
+then
+  echo "Tasks inconsistent duplicated: ${DUPES}"
+  exit 1
+fi
+)
