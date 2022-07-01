@@ -11,6 +11,7 @@ fi
 set -u
 SEARCH_TERM="${1}"
 
+set +o errexit
 embolden '================================================================================\n'
 # First, search for subjects in to-do status
 embolden "SUBJECT NOTES SEARCH IN TODO STATUS\n"
@@ -120,3 +121,4 @@ do
 done
 embolden '================================================================================\n'
 echo
+set -o errexit
