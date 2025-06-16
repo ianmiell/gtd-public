@@ -1,10 +1,10 @@
 #!/bin/bash
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 (
 cd "${ROOT_FOLDER}" || return
 git stash
-git pull --rebase
+git fetch origin master >/dev/null 2>&1
+git rebase origin/master >/dev/null 2>&1
 git stash pop
 )

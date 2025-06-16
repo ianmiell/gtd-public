@@ -20,7 +20,7 @@ def main():
 
 def send(key, message):
 	print(message)
-	mailgun = Mailgun(apikey='key-xxxxxxxxxxxxxxxxxxxxxxxxx', domain='mail.meirionconsulting.com')
+	mailgun = Mailgun(apikey='key-695a2c43a08522d419462fc76e2788c0', domain='mail.meirionconsulting.com')
 	mailgun.send_message("Text, <gtd@mail.meirionconsulting.com>", "ian.miell@gmail.com", "GTD alert: " + message, message)
 	##msg = MIMEText(message.encode('ascii','ignore'))
 	#msg = MIMEText('test')

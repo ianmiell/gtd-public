@@ -1,0 +1,35 @@
+#!/bin/bash
+source ./gtd-call-check
+
+function usage {
+	echo ""
+	echo "${ROOT_FOLDER}/bin/gtd unremind [TASKNO]"
+	echo ""
+	exit
+}
+
+# Process args
+set +o nounset
+if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${2}" == "" ]]
+then
+	echo "Argument required to gtd-unremind - task_no"
+	usage
+fi
+readonly WORKING_TASK_NO="${1}"
+# Check arg is a number and task exists
+assert_is_num "${WORKING_TASK_NO}"
+if [[ ! -d "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}" ]]
+then
+	echo "Task ${WORKING_TASK_NO} appears not to exist"
+	usage
+fi
+set -o nounset
+
+rm -f "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}/${REMINDME_FILE}"
+rm -f "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}/${REMINDME_REPEAT_FILE}"
+
+# Commit and push
+git add "${ROOT_FOLDER}"
+show_git_status
+
+gtd-check-consistent

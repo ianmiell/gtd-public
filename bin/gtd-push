@@ -1,0 +1,13 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-newtask - subject"
+	echo ""
+	sleep 2 && ./gtd-help
+fi
+
+gtd commit
+git_push || (git_pull && git_push)

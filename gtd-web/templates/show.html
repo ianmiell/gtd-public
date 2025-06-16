@@ -1,0 +1,25 @@
+<!-- templates/show.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+	{{template "css.html" .}}
+  </head>
+  <body>
+    {{template "header.html" .}}
+    <h1>{{.Title}}</h1>
+
+    <form method="POST">
+      Task ID:<br>
+      <input name="taskid" required placeholder="Enter Task ID">
+      <br>
+      <button type="submit">Show Task Folder</button>
+    </form>
+
+    {{if .Result}}
+    <h2>Command Result</h2>
+    <pre>{{.Result}}</pre>
+    {{end}}
+  </body>
+</html>
+

@@ -1,16 +1,40 @@
 #!/bin/bash
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 set +u
 if [[ "${1}" == "" ]]
 then
 	echo "Argument required to gtd-newtask - subject"
 	echo ""
-	./gtd-help
+	sleep 2 && ./gtd-help
 fi
 set -u
+set +o pipefail
+
+# TODO: does the logic in this section make sense? could it be quicker?
 SUBJECT="${1}"
+GO_TO_TASK="${GO_TO_TASK:=Y}"
+
+function gtd_capture_newtask_offline {
+	git_pull || (git_commit 'auto-commit for newtask' && git_pull) || printf "NEWTASK:\n%s\n" "${1}" >> "${2}"
+	echo "Input any notes; CTRL-D to finish"
+	local notes
+	notes="$(</dev/stdin)"
+	{ echo "NOTES:"; echo "$notes"; echo "$GTD_OFFLINE_SEPARATOR"; } >> "${2}"
+	exit 0
+}
+
+has_connection || gtd_capture_newtask_offline "${SUBJECT}" "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}"
+
+git_pull || (git_commit 'auto-commit for newtask' && git_pull)
+
+( git_commit pre-newtask ) || PAGER='' git diff
+if [[ $- == *i* ]]
+then
+	echo "Want to commit before continuing? Hit enter, or CTRL-C to quit"
+	read -r
+fi
+( git_commit "newtask before" && git_push  ) || true
 
 # Get last task number and upgrade it
 LAST_TASK_NO="$(cat "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}")"
@@ -21,7 +45,8 @@ echo "${NEW_TASK_NO}" > "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}"
 NEW_TASKFOLDER="${ROOT_FOLDER}/${TASKS_FOLDER}/${NEW_TASK_NO}"
 mkdir -p "${NEW_TASKFOLDER}"
 date +%s > "${NEW_TASKFOLDER}/${CREATED_DATE_FILE}"
-echo -e "= ${SUBJECT}\n" > "${NEW_TASKFOLDER}/${NOTES_FILE}"
+echo -e "# ${SUBJECT}\nTask Number: ${NEW_TASK_NO}\n" > "${NEW_TASKFOLDER}/${NOTES_FILE}"
+touch "${NEW_TASKFOLDER}/.gitignore"
 
 (
 cd "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}" && ln -s "../../${TASKS_FOLDER}/${NEW_TASK_NO}" "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}"
@@ -36,6 +61,13 @@ git add "${NEW_TASKFOLDER}"
 git add "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}/${NEW_TASK_NO}"
 git add "${ROOT_FOLDER}/${STATUS_FOLDER}/${DEFAULT_STATUS}/${NEW_TASK_NO}"
 git add "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}"
-show_git_status
+##show_git_status
 
-${ROOT_FOLDER}/bin/gtd go "${NEW_TASK_NO}"
+git_commit "newtask after ${NEW_TASK_NO}"
+git_push || gtd pull --rebase
+
+# Go if configured to (by default, else no).
+if [[ ${GO_TO_TASK} == Y ]]
+then
+	"${ROOT_FOLDER}"/bin/gtd go "${NEW_TASK_NO}"
+fi

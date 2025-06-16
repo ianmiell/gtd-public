@@ -1,0 +1,23 @@
+<!-- templates/newtask.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+	{{template "css.html" .}}
+  </head>
+  <body>
+    {{template "header.html" .}}
+    <h1>{{.Title}}</h1>
+    <form method="POST">
+      Task Subject:<br>
+      <input name="subject" required>
+      <br>
+      <button type="submit">Create Task</button>
+    </form>
+    {{if .Result}}
+    <h2>Result</h2>
+    <pre>{{.Result}}</pre>
+    {{end}}
+  </body>
+</html>
+

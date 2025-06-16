@@ -2,43 +2,47 @@
 # Get current date in s
 # For each FILE in tasks/*/.remindme
 #   if current date > cat FILE; then move to TODO; up status to HIGH
-#   send email
+#   create ticket
 #   remove .remindme file
 
-# Update the local copy, email on error
-git pull --rebase || (cd "${ROOT_FOLDER}/bin" && python mail.py --message "gtd-check-reminders on $(hostname) is broken")
+# Update the local copy, create ticket on error
+#set -xv
+git_commit 'cron commit' || true
+git fetch origin master || (gtd newtask "gtd-check-reminders on $(hostname) is broken at $(date)")
+git rebase origin/master || (gtd newtask "gtd-check-reminders on $(hostname) is broken at $(date)")
 # Get all the remindme files
-for file in "${ROOT_FOLDER}/${TASKS_FOLDER}/"*/.remindme
+echo for file in "${ROOT_FOLDER}/${TASKS_FOLDER}/"*"/${REMINDME_FILE}"
+for file in "${ROOT_FOLDER}/${TASKS_FOLDER}/"*"/${REMINDME_FILE}"
 do
 	if [[ "$(date +%s)" -gt "$(cat "${file}")" ]]
 	then
 		# Extract the task number
-		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/.remindme/\1/')"
-		# Ignore closed files
-		if [[ -a "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/${TASK_NO}" ]]
-		then
-			continue
-		fi
+		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/'${REMINDME_FILE}'/\1/')"
 		OVERDUE_ON="$(date -d "@$(cat "${file}")")"
 		echo "${TASK_NO} overdue on ${OVERDUE_ON}"
-		# Send email
-		(
-			cd "${ROOT_FOLDER}/bin" && python mail.py --message "Task no ${TASK_NO} overdue on ${OVERDUE_ON} - $(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${NOTES_FILE}")"
-		)
-		# If there's a repeat, set reminder for the future
-		if [[ -a "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.repeat" ]]
+		# Ignore closed files iff there are no repeat files
+		if [[ -a "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/${TASK_NO}" && ! -a "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_REPEAT_FILE}" ]]
 		then
-			date -d "+$(cat "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.repeat") days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.remindme"
+			# Remove the file
+			rm "${file}"
+			continue
+		fi
+		# If there's a repeat, set reminder for the future
+		if [[ -a "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_REPEAT_FILE}" ]]
+		then
+			date -d "+$(cat "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_REPEAT_FILE}") days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_FILE}"
 		else
 			# Otherwise, delete the remindme file
-			git rm "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.remindme"
+			git rm "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_FILE}"
 		fi
 		# Move task to todo
-		${ROOT_FOLDER}/bin/gtd move-status "${TODO_STATUS}" "${TASK_NO}"
-		git commit -am 'remindme update'
-		git push
+		"${ROOT_FOLDER}"/bin/gtd move-status "${TODO_STATUS}" "${TASK_NO}"
+		git_commit 'remindme update'
+		git_push
+		# Create ticket
+		echo -e "\nTask no ${TASK_NO} overdue on ${OVERDUE_ON} - $(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${NOTES_FILE}" | sed 's/# //'), run 'rm ~/git/gtd/${TASKS_FOLDER}/${TASK_NO}/.re[mp][ie][na][dt]*' to prevent further reminders. Delete this line to acknowledge." >> "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${NOTES_FILE}"
 	else
-		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/.remindme/\1/')"
+		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/'${REMINDME_FILE}'/\1/')"
 		echo "${TASK_NO} waiting until $(date -d "@$(cat "${file}")")"
 	fi
 done

@@ -1,23 +1,17 @@
 #!/bin/bash
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 MEDIUM_PRIORITY_ISSUES=$(comm -1 -2 <(ls "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}") <(ls "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${MEDIUM_PRIORITY}/"))
-LOW_PRIORITY_ISSUES=$(comm -1 -2 <(ls "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}") <(ls "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${LOW_PRIORITY}/"))
 
-if [[ "${MEDIUM_PRIORITY_ISSUES} ${LOW_PRIORITY_ISSUES}" == ' ' ]]
+if [[ "${MEDIUM_PRIORITY_ISSUES}" == '' ]]
 then
     echo "No issues in priority: ${MEDIUM_PRIORITY}"
 else
 	echo "Medium priority:"
+    output=
 	for issue in ${MEDIUM_PRIORITY_ISSUES}
 	do
-	    echo "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}": "$(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}")"
+	    output="$output\n${issue}${GTD_OUTPUT_SEPARATOR} $(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}" | sed 's/# //')"
 	done
-	echo
-	echo "Low priority:"
-	for issue in ${LOW_PRIORITY_ISSUES}
-	do
-	    echo "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}": "$(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}")"
-	done
+	echo -e "$output" | column -t -s "$GTD_OUTPUT_SEPARATOR"
 fi

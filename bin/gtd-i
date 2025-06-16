@@ -1,0 +1,24 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-info - task number"
+	echo ""
+	sleep 2 && ./gtd-help
+fi
+set -u
+
+readonly TASK_NO="${1}"
+assert_is_num "${TASK_NO}"
+
+(
+cd "${ROOT_FOLDER}" || return
+echo "--------------------------------------------------------------------------------"
+echo -e "File changes:\n"
+git log --name-only --pretty=format:"%ch" -- "${TASKS_FOLDER}/${TASK_NO}" | sed "s/${TASKS_FOLDER}\/${TASK_NO}.//g" | tee
+echo "--------------------------------------------------------------------------------"
+echo -e "Status changes:\n"
+git log --diff-filter='AD' --name-status --pretty=format:"%ch"  -- "*${TASK_NO}*" | grep -v "${TASKS_FOLDER}/${TASK_NO}" | tee
+)

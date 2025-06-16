@@ -1,0 +1,20 @@
+#!/bin/bash
+source ./gtd-call-check
+
+FILES="$(grep -nwIEl TODO \
+	${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}/*/* \
+	${ROOT_FOLDER}/${STATUS_FOLDER}/${WAITING_STATUS}/*/* \
+	${ROOT_FOLDER}/${STATUS_FOLDER}/${BACKGROUND_STATUS}/*/*)"
+
+TASKS="$(for f in $FILES
+do
+	DIRNAME="$(dirname ${f})"
+	TASK_NO="$(basename ${DIRNAME})"
+	echo ${TASK_NO}
+done | sort -n)"
+for t in ${TASKS}
+do
+	SUMMARY="$(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${t}/${NOTES_FILE}" | sed 's/# //')"
+	echo "${t}: ${SUMMARY}"
+	grep TODO "${ROOT_FOLDER}/${TASKS_FOLDER}/${t}/${NOTES_FILE}"
+done

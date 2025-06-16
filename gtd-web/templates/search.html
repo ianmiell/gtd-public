@@ -1,0 +1,25 @@
+<!-- templates/search.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+	{{template "css.html" .}}
+  </head>
+  <body>
+    {{template "header.html" .}}
+    <h1>{{.Title}}</h1>
+
+    <form method="POST">
+      Search Term:<br>
+      <input name="term" required placeholder="Enter Search Term">
+      <br>
+      <button type="submit">Show Task Folder</button>
+    </form>
+
+    {{if .Result}}
+    <h2>Command Result</h2>
+    <pre>{{.Result}}</pre>
+    {{end}}
+  </body>
+</html>
+

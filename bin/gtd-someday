@@ -1,7 +1,5 @@
 #!/bin/bash
-
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 #echo "ARG 1: ${1:-""}"
 #echo "ARG 2: ${2:-""}"
@@ -23,7 +21,7 @@ case ${1} in
     if [[ "$(is_num "${1}")" != "0" ]]
     then
       echo 'Doing a search, as a number was not given...'
-      ${ROOT_FOLDER}/bin/gtd search "${1}"
+      "${ROOT_FOLDER}"/bin/gtd search "${1}"
       exit $?
     fi
     echo 'No status given'
@@ -42,25 +40,26 @@ then
 	exit 10
 else
 	echo "Tasks in ${STATUS_UPPER} status"
-	for task in $RESULT
+	output=
+	for task_file in $RESULT
 	do
-		if [[ "$task" =~ .*/([0-9]*)/${NOTES_FILE} ]]
+		if [[ "$task_file" =~ .*/([0-9]*)/${NOTES_FILE} ]]
 		then
 			THIS_TASK_NO="${BASH_REMATCH[1]}"
 		else
-			echo "Task number not matched for file: ${task}"
+			output="${output}\nTask number not matched for file: ${task_file}"
 		fi
 		THIS_TASK_FOLDER="${ROOT_FOLDER}/${TASKS_FOLDER}/${THIS_TASK_NO}"
-		echo -n "${task}: $(head -1 "${task}")"
+		output="${output}\n${THIS_TASK_NO}${GTD_OUTPUT_SEPARATOR} $(head -1 "${task_file}" | sed 's/# //')"
 		if [[ -a "${THIS_TASK_FOLDER}/${REMINDME_FILE}" ]]
 		then
 			REMIND_DATE="$(cat "${THIS_TASK_FOLDER}/${REMINDME_FILE}")"
-			echo -n . Reminder set for "$(parse_date_in_seconds "${REMIND_DATE}")"
+			output="${output}${GTD_OUTPUT_SEPARATOR} Reminder at: $(parse_date "${REMIND_DATE}")"
 			if [[ -a "${THIS_TASK_FOLDER}/${REMINDME_REPEAT_FILE}" ]]
 			then
-				echo -n ", repeated every $(cat "${THIS_TASK_FOLDER}/${REMINDME_REPEAT_FILE}") days"
+				output="${output}, repeated every $(cat "${THIS_TASK_FOLDER}/${REMINDME_REPEAT_FILE}") days"
 			fi
 		fi
-		echo
 	done
+	echo -e "$output" | column -t -s "${GTD_OUTPUT_SEPARATOR}"
 fi

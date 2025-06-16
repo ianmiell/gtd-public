@@ -25,12 +25,13 @@ done
 DIR="$(cd -P "$(dirname "${SOURCE}")" && pwd)"
 readonly DIR
 # Move to this directory
-cd "${DIR}"
+cd "${DIR}" || exit
 
-cd ..
+cd .. || exit
 
+echo "Going to delete from $(pwd)"
 echo 'SURE? (y)'
-read INPUT
+read -r INPUT
 if [[ $INPUT != 'y' ]]
 then
   echo quitting
@@ -38,13 +39,16 @@ then
 fi
 rm -rf jira_old
 rm -rf checklists
-rm -rf people/*asciidoc
+rm -rf people/*.md
+rm -rf people/*.last_updated
+rm -rf people/*.pdf
 rm -rf people/*last_contacted
 rm -rf people/*birthday
 rm -rf priority/*/[0-9]*
 rm -rf status/*/[0-9]*
 rm -rf tasks/[0-9]*
 rm -rf webserver
+rm -rf meetings/*
 echo 0 > .metadata/lasttask
 rm -rf .git
 git init

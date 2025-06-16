@@ -1,0 +1,51 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${1}" == "" ]] || [[ "${2}" == "" ]]
+then
+	echo "Argument required to gtd-people - edit/new Firstname_Lastname"
+	echo ""
+	sleep 2 && ./gtd-help
+	exit 1
+fi
+set -u
+set +o pipefail
+
+ACTION="${1}"
+SUBJECT="${2}"
+
+SUBJECT_FILE="${ROOT_FOLDER}/${PEOPLE_FOLDER}/${SUBJECT}.md"
+
+if [[ ${ACTION} == show ]]
+then
+	cat "${SUBJECT_FILE}"
+	exit 0
+elif [[ ${ACTION} == new ]]
+then
+	true
+	# Create new person
+	git_pull || (git_commit 'auto-commit for new person' && git_pull)
+	( git_commit pre-newperson ) || PAGER= git diff
+	if [[ $- == *i* ]]
+	then
+		echo "Want to commit before continuing? Hit enter, or CTRL-C to quit"
+		read
+	fi
+	( git_commit "newperson before" && ( git_push || git_pull --rebase ) ) || true
+	if [[ -f $SUBJECT_FILE ]]
+	then
+		echo "$SUBJECT_FILE already exists"
+		exit 1
+	fi
+	touch "${SUBJECT_FILE}"
+fi
+
+# Go to file and open notes
+vi "${SUBJECT_FILE}"
+
+# Git add
+git add "${SUBJECT_FILE}"
+
+git_commit "new/edit person ${SUBJECT}"
+git_push || gtd pull --rebase

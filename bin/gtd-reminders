@@ -1,0 +1,25 @@
+#!/bin/bash
+source ./gtd-call-check
+
+REMINDER_ISSUES="$(ls ${ROOT_FOLDER}/${TASKS_FOLDER}/*/${REMINDME_FILE} | sed 's/.*\/\([0-9][0-9]*\).*/\1/g')"
+
+if [[ "${REMINDER_ISSUES}" == '' ]]
+then
+    echo "No issues in priority: ${REMINDER_ISSUES}"
+else
+	echo "Tasks in AWAITING A REMINDER state (AND NOT in WAITING state)."
+	echo "Remember to remove the ${REMINDME_FILE} file if you don't want it:"
+	output=
+	for issue in ${REMINDER_ISSUES}
+	do
+		if [[ -a ../status/waiting/${issue} ]]
+		then
+			continue
+		fi
+		THIS_TASK_FOLDER="${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}"
+	    output="${output}\n${issue}${GTD_OUTPUT_SEPARATOR} $(head -1 "${THIS_TASK_FOLDER}/${NOTES_FILE}" | sed 's/# //')"
+		REMIND_DATE="$(cat "${THIS_TASK_FOLDER}/${REMINDME_FILE}")"
+		output="${output}${GTD_OUTPUT_SEPARATOR} Reminder at: $(parse_date "${REMIND_DATE}")"
+	done
+	echo -e "${output}" | column -t -s "${GTD_OUTPUT_SEPARATOR}"
+fi

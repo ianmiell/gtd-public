@@ -14,6 +14,37 @@ function error {
 # Trap exit.
 trap cleanup EXIT
 
+if [[ $GTD_PROFILE == 1 ]]
+then
+	# Enable extended debugging
+	set -o functrace
+	trap 'preexec_invoke_exec' DEBUG
+
+	# Function to profile each command
+	preexec_invoke_exec () {
+	    # Save the start time
+		last_command="$BASH_COMMAND"
+	    last_command_start_time=$(gdate +%s.%N)
+	    trap 'postexec_invoke_exec' DEBUG
+	}
+
+	# Function to report time after each command
+	postexec_invoke_exec () {
+	    trap - DEBUG
+	    # Save the end time
+	    local last_command_end_time
+	    last_command_end_time=$(gdate +%s.%N)
+	    # Calculate the elapsed time
+	    local elapsed
+	    elapsed=$(echo "$last_command_end_time - $last_command_start_time" | bc)
+	    # Get the last executed command
+	    #local last_command=$(history 1 | sed 's/^ *[0-9]* *//')
+	    # Print the elapsed time
+	    >&2 echo "Elapsed time for $last_command is $elapsed seconds"
+		trap 'preexec_invoke_exec' DEBUG
+	}
+fi
+
 # Move folder
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "${SOURCE}" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -22,22 +53,50 @@ while [ -h "${SOURCE}" ]; do # resolve $SOURCE until the file is no longer a sym
   SOURCE="$(readlink "${SOURCE}")"
   [[ ${SOURCE} != /* ]] && SOURCE="${BIN_DIR}/${SOURCE}" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-DIR="$(cd -P "$(dirname "${SOURCE}")" && pwd)"
-readonly DIR
+[[ -z ${DIR} ]] && DIR="$(cd -P "$(dirname "${SOURCE}")" && pwd)" && export DIR
 # Move to this directory
 cd "${DIR}"
 # Get the absolute root folder of the repo.
-ROOT_FOLDER="$(realpath "$(dirname "$(pwd)")")"
-readonly ROOT_FOLDER
+[[ -z ${ROOT_FOLDER} ]] && ROOT_FOLDER="$(realpath "$(dirname "$(pwd)")")" && export ROOT_FOLDER
 
 # source shared files
-source ./globals
-source ./gtd-call-check
+source ./gtd-globals
 
 # VALIDATION
 if [[ $1 = '' ]]
 then
 	source ./gtd-help
+fi
+
+if [[ "${GTD_CONNECTED}" == 1 && -f "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" ]]
+then
+	filename="${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}".tmp
+	mv "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" "${filename}"
+
+	eval "$(awk -v RS='\\+{5,}\\s*\n' '
+		{
+		    newtask = ""
+		    notes = ""
+		    for (i = 1; i <= NF; i++) {
+		        if ($i == "NEWTASK:") newtask = $(i+1)
+		        if ($i == "NOTES:") {
+		            for (j = i+1; j <= NF; j++) {
+		                if ($(j) == "NEWTASK:" || $(j) ~ /^\\+{5,}$/) break
+		                notes = notes $(j) "\n"
+		            }
+		        }
+		    }
+		    # Use printf to safely embed newlines into shell-eval-friendly syntax
+		    printf "NEWTASK_TITLE='%s'\n", newtask
+		    printf "NEWTASK_NOTES=$(cat <<'EOF'\n%sEOF\n)\n", notes
+		}' "$filename"
+	)"
+	export GO_TO_TASK
+	GO_TO_TASK=N
+	gtd newtask "$NEWTASK_TITLE"
+	NEW_TASK_NO="$(cat "${ROOT_FOLDER}/$LAST_TASK_NO_FILE")"
+	printf "%s\n" "${NEWTASK_NOTES}" >> "${ROOT_FOLDER}/${TASKS_FOLDER}/${NEW_TASK_NO}/${NOTES_FILE}"
+	rm -f "${filename}"
 fi
 
 # SHELL OPTIONS
@@ -56,6 +115,6 @@ then
 	# shellcheck source=/dev/null
 	source ./gtd-"$@"
 else
-	${ROOT_FOLDER}/bin/gtd search "${1}"
+	"${ROOT_FOLDER}"/bin/gtd search "${1}"
 	cleanup
 fi

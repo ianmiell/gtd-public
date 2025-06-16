@@ -1,0 +1,25 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${1}" == "" ]]
+then
+	echo "Argument required to gtd-show - task number"
+	echo ""
+	sleep 2 && ./gtd-help
+fi
+set -u
+readonly SHOW_TASK_NO="${1}"
+assert_is_num "${SHOW_TASK_NO}"
+
+(
+echo -n "Status: "
+ls -d "${ROOT_FOLDER}/${STATUS_FOLDER}/"*"/${SHOW_TASK_NO}" | sed "s|.*${STATUS_FOLDER}.\([^\/]*\).${SHOW_TASK_NO}|\1|"
+echo -n "Priority: "
+ls -d "${ROOT_FOLDER}/${PRIORITY_FOLDER}/"*"/${SHOW_TASK_NO}" | sed "s|.*${PRIORITY_FOLDER}.\([^\/]*\).${SHOW_TASK_NO}|\1|"
+cd "${ROOT_FOLDER}/${TASKS_FOLDER}/${SHOW_TASK_NO}" || return
+echo "Task ${SHOW_TASK_NO} files:"
+ls
+echo "Task ${SHOW_TASK_NO} notes.md:"
+cat notes.md
+)

@@ -1,0 +1,28 @@
+<table>
+<tr>
+<td><a href='/gtd/dashboard'>Dashboard</a></td>
+<td><a href='/gtd/show'>Show Task</a></td>
+<td><a href='/gtd/search'>Search Task</a></td>
+</tr>
+<tr>
+<td><a href='/gtd/push'>Push Repo</a></td>
+<td><a href='/gtd/pull'>Refresh Repo</a></td>
+<td><a href='/gtd/newtask'>New Task</a></td>
+</tr>
+{{if .TaskId}}
+<tr>
+		<td><a href='/gtd/show?status=todo&taskid={{.TaskId}}'>Move to ToDo</a></td>
+		<td><a href='/gtd/show?status=background&taskid={{.TaskId}}'>Move to Background</a></td>
+		<td><a href='/gtd/show?status=waiting&taskid={{.TaskId}}'>Move to Waiting</a></td>
+		</tr>
+		<tr>
+		<td><a href='/gtd/show?status=someday&taskid={{.TaskId}}'>Move to Someday</a></td>
+		<td><a href='/gtd/show?status=closed&taskid={{.TaskId}}'>Move to Closed</a></td>
+		<td><a href='/gtd/show?priority=high&task_id={{.TaskId}}'>Move to High Priority</a></td>
+		</tr>
+		<tr>
+		<td><a href='/gtd/show?priority=medium&task_id={{.TaskId}}'>Move to Medium Priority</a></td>
+		<td><a href='/gtd/show?priority=low&task_id={{.TaskId}}'>Move to Low Priority</a></td>
+</tr>
+{{end}}
+</table>

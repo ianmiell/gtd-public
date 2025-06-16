@@ -1,13 +1,13 @@
 #!/bin/bash
 
 source ./gtd-call-check
-${ROOT_FOLDER}/gtd check-git-clean
 
 # readonly THIS_YEAR=$(date --date='this year' +%Y)
 NEXT_YEAR=$(date --date='next year' +%Y)
 readonly NEXT_YEAR
 
-for file in $(find "${ROOT_FOLDER}"/"${PEOPLE_FOLDER}" -name "*${BIRTHDAY_FILE}")
+cd "${ROOT_FOLDER}"
+while IFS= read -r file
 do
 	# Birthday files are of the format: NEXTBDAYYEAR-MONTH-DAY
 	# Turn birthdate into seconds
@@ -17,15 +17,19 @@ do
 	# Compare birthday in seconds with 4 days' time.
 	if [[ "$(date --date="+4 days" +%s)" -gt "${BIRTHDAY}" ]]
 	then
-		# email yourself reminding to contact
-		(
-			cd "${ROOT_FOLDER}/bin" && python mail.py --message "Birthday for: ${file} $BIRTHDAY"
-		)
-		# update last_contacted with current date
-		git pull --rebase
+		# For the crontab where env is not set up
+		git config --global user.email "ian.miell@gmail.com"
+		git config --global user.name "Ian Miell"
+		export HOME=~
+		# Update last_contacted with current date
+		git fetch origin master > /dev/null 2>&1
+		git rebase origin/master > /dev/null 2>&1
 		# Update date for next year
 		echo "${NEXT_YEAR}-${DAY}" > "${file}"
-		git commit -am "birthday updated for ${file}"
-		git push
+		git_commit "birthday updated for ${file}"
+		git_push
+		# Create ticket for this
+		gtd newtask "BIRTHDAY: ${file}" N
 	fi
-done
+	cd "${ROOT_FOLDER}"
+done < <(find "${ROOT_FOLDER}"/"${PEOPLE_FOLDER}" -name "*${BIRTHDAY_FILE}")

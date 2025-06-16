@@ -6,48 +6,49 @@ if [[ "${1}" == "" ]]
 then
 	echo "Argument required to gtd-newtask - search term"
 	echo ""
-	./gtd-help
+	sleep 2 && ./gtd-help
 fi
 set -u
 SEARCH_TERM="${1}"
 
 set +o errexit
+
 embolden '================================================================================\n'
 # First, search for subjects in to-do status
 embolden "SUBJECT NOTES SEARCH IN TODO STATUS\n"
 # Use line one of the notes file
-RESULTS="$(grep -ni "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | grep -w 1 | awk '{print $1}')"
+RESULTS="$(LC_ALL=C grep -niF "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | LC_ALL=C grep -wF 1 | awk '{print $1}' | sed -E 's/^[^0-9]*([0-9][0-9]*).*/\1/' | sort -n | tac)"
 readonly RESULTS
 if [[ $RESULTS != '' ]]
 then
 	echo '________________________________________________________________________________'
 	for f in $RESULTS
 	do
+		fname="${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}/${f}/${NOTES_FILE}"
+		embolden "TASK ${f}: "
+		head -1 "${fname}" | sed 's/^[# ]*//' | sed "s/${SEARCH_TERM}/$(printf '\033[1m')${SEARCH_TERM}$(printf '\033[0m')/gI"
+		echo '________________________________________________________________________________'
 		echo Next item, hit return
 		read -r
-		f=${f/${NOTES_FILE}*/${NOTES_FILE}}
-		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
-		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
-		head -1 "${f}" | sed 's/^[= ]*//'
-		echo '________________________________________________________________________________'
 	done
 fi
 
 embolden '================================================================================\n'
 embolden "SUBJECT NOTES IN UN-CLOSED TICKETS\n"
 # Then, search everything else, except closed and old JIRA
-MATCHING_FILES=$(grep -RinlI --exclude-dir="${PEOPLE_FOLDER}" --exclude-dir="${OLD_JIRA_FOLDER}" --exclude-dir="${CLOSED_STATUS}" "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}" 2>/dev/null)
+MATCHING_FILES=$(LC_ALL=C grep -FRinlI --exclude-dir="${MEETINGS_FOLDER}" --exclude-dir="${PEOPLE_FOLDER}" --exclude-dir="${OLD_JIRA_FOLDER}" --exclude-dir="${CLOSED_STATUS}" "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}" 2>/dev/null)
 readonly MATCHING_FILES
 for f in ${MATCHING_FILES}
 do
 	if head -1 "${f}" | grep -i "${SEARCH_TERM}" >/dev/null 2>&1
 	then
-		echo Next item, hit return
-		read -r
+		echo '________________________________________________________________________________'
 		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
 		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
-		head -1 "${f}" | sed 's/^[= ]*//'
+		head -1 "${f}" | sed 's/^[= ]*//' | sed "s/${SEARCH_TERM}/$(printf '\033[1m')${SEARCH_TERM}$(printf '\033[0m')/gI"
 		echo '________________________________________________________________________________'
+		echo Next item, hit return
+		read -r
 	fi
 done
 
@@ -64,20 +65,20 @@ embolden '======================================================================
 # First, search for subjects in closed status
 embolden "SUBJECT NOTES SEARCH IN CLOSED STATUS\n"
 # Use line one of the notes file
-CLOSED_MATCHES="$(grep -ni "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | grep -w 1 | awk '{print $1}')"
+CLOSED_MATCHES="$(LC_ALL=C grep -niF "${SEARCH_TERM}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/"*"/${NOTES_FILE}" 2>/dev/null | grep -w 1 | awk '{print $1}' | sed -E 's/^[^0-9]*([0-9][0-9]*).*/\1/' | sort -n | tac)"
 readonly CLOSED_MATCHES
 if [[ $CLOSED_MATCHES != '' ]]
 then
-	echo '________________________________________________________________________________'
+	echo '_______________________________________________________________________________'
 	for f in $CLOSED_MATCHES
 	do
+		echo '________________________________________________________________________________'
+		fname="${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}/${f}/${NOTES_FILE}"
+		embolden "TASK ${f}: "
+		head -1 "${fname}" | sed 's/^[= ]*//' | sed "s/${SEARCH_TERM}/$(printf '\033[1m')${SEARCH_TERM}$(printf '\033[0m')/gI"
+		echo '________________________________________________________________________________'
 		echo Next item, hit return
 		read -r
-		f=${f/${NOTES_FILE}*/${NOTES_FILE}}
-		EXTRACTED_TASK_NUMBER="$(extract_task_number_from_notes_file "${f}")"
-		embolden "TASK ${EXTRACTED_TASK_NUMBER}: "
-		head -1 "${f}" | sed 's/^[= ]*//'
-		echo '________________________________________________________________________________'
 	done
 fi
 
@@ -85,11 +86,12 @@ embolden '======================================================================
 embolden "OTHER MATCHES, GREPS\n"
 for f in ${MATCHING_FILES}
 do
-	read -r
 	echo '________________________________________________________________________________'
 	embolden "grep matches in file: ${f}, here is the grep output\n"
-	grep -iHnA2 "${SEARCH_TERM}" "${f}"
+	LC_ALL=C grep -FiHnA2 "${SEARCH_TERM}" "${f}" | sed "s/${SEARCH_TERM}/$(printf '\033[1m')${SEARCH_TERM}$(printf '\033[0m')/gI"
 	echo '________________________________________________________________________________'
+	echo Next item, hit return
+	read -r
 done
 
 embolden '================================================================================\n'
@@ -104,21 +106,22 @@ fi
 embolden '================================================================================\n'
 embolden "CLOSED AND OLD JIRA MATCHING FILES\n"
 # Then, search everything, but only give file names
-OTHER_MATCHING_FILES=$(grep -RinlI "${SEARCH_TERM}" "${ROOT_FOLDER}/${OLD_JIRA_FOLDER}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}" "${ROOT_FOLDER}/${PEOPLE_FOLDER}" 2>/dev/null | sort)
+OTHER_MATCHING_FILES=$(grep -RinlI "${SEARCH_TERM}" "${ROOT_FOLDER}/${MEETINGS_FOLDER}" "${ROOT_FOLDER}/${OLD_JIRA_FOLDER}" "${ROOT_FOLDER}/${STATUS_FOLDER}/${CLOSED_STATUS}" "${ROOT_FOLDER}/${PEOPLE_FOLDER}" 2>/dev/null | sort)
 readonly OTHER_MATCHING_FILES
 for file in ${OTHER_MATCHING_FILES}
 do
-	echo Next item, hit return
-	read -r
 	echo '________________________________________________________________________________'
 	#if head -1 "${file}" | grep -i "${SEARCH_TERM}"
 	#then
-		echo "${file}: $(grep -iHnA2 "${SEARCH_TERM}" "${file}")"
+		echo "${file}: $(grep -iHnA2 "${SEARCH_TERM}" "${file}")" | sed "s/${SEARCH_TERM}/$(printf '\033[1m')${SEARCH_TERM}$(printf '\033[0m')/gI"
 	#else
 	#	echo "${file}"
 	#fi
 	echo '________________________________________________________________________________'
+	echo Next item, hit return
+	read -r
 done
 embolden '================================================================================\n'
 echo
+
 set -o errexit

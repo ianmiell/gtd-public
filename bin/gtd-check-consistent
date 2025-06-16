@@ -1,7 +1,10 @@
 #!/bin/bash
 # Check that there are no inconsistencies
+# TODO: basename throws errors in some places because it does not like more than two operands
+# Need to collect all the files then process, eg
+# find * -name '[0-9]*' | sed 's/^.*\/\([0-9][0-9]*\)$/\1/'
 (
-DUPES=$(basename ../status/*/[0-9]* | sort -n | uniq -d)
+DUPES=$(find * -name '[0-9]*' | sed 's/^.*\/\([0-9][0-9]*\)$/\1/' | sort -n | uniq -d)
 if [[ ${DUPES} != '' ]]
 then
   echo "Tasks inconsistent duplicated: ${DUPES}"

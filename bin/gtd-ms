@@ -1,7 +1,5 @@
 #!/bin/bash
-
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 function usage {
 	echo ""
@@ -42,14 +40,14 @@ OLD_STATUS=
 if [[ ${OLD_STATUS} == "${MOVE_TO_STATUS}" ]]
 then
 	echo "Old status is the same as the new status"
-	usage
+else
+	# If the current status == new status
+	# find current status, mv it to new one
+	(
+	cd "${ROOT_FOLDER}/${STATUS_FOLDER}/${MOVE_TO_STATUS}" && ln -sf "../../${TASKS_FOLDER}/${WORKING_TASK_NO}" .
+	rm -f "${OLD_STATUS_LN}"
+	)
 fi
-# If the current status == new status
-# find current status, mv it to new one
-(
-cd "${ROOT_FOLDER}/${STATUS_FOLDER}/${MOVE_TO_STATUS}" && ln -sf "../../${TASKS_FOLDER}/${WORKING_TASK_NO}" .
-rm -f "${OLD_STATUS_LN}"
-)
 
 # Commit and push
 git add "${ROOT_FOLDER}"

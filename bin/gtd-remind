@@ -27,18 +27,19 @@ read -r REGULAR_REPEAT
 assert_is_num "${TASK_NO}"
 assert_is_num "${DAYS_IN_FUTURE}"
 
-date -d "+${DAYS_IN_FUTURE} days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.remindme" 2>/dev/null || \
-  gdate -d "+${DAYS_IN_FUTURE} days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.remindme" 2>/dev/null ||
+date -d "+${DAYS_IN_FUTURE} days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_FILE}" 2>/dev/null || \
+  gdate -d "+${DAYS_IN_FUTURE} days" +%s > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_FILE}" 2>/dev/null
 if [[ "${REGULAR_REPEAT}" == 'y' ]]
 then
-	echo "${DAYS_IN_FUTURE}" > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/.repeat"
+	echo "${DAYS_IN_FUTURE}" > "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_NO}/${REMINDME_REPEAT_FILE}"
 else
 	echo 'Understood as "no", continuing'
 fi
-
-${ROOT_FOLDER}/bin/gtd move-status waiting "${TASK_NO}"
 
 (
 cd "${ROOT_FOLDER}" || exit
 git add .
 )
+
+"${ROOT_FOLDER}"/bin/gtd move-status waiting "${TASK_NO}"
+

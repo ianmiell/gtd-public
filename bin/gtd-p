@@ -7,8 +7,11 @@ then
 	echo "No issues in priority: ${HIGH_PRIORITY}"
 	exit 10
 else
+	echo "High priority:"
+	output=""
 	for issue in ${PRIORITY_ISSUES}
 	do
-		echo "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}": "$(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}")"
+		output="${output}\n${issue}$GTD_OUTPUT_SEPARATOR $(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}" | sed 's/# //')"
 	done
+    echo -e "$output" | column -t -s "$GTD_OUTPUT_SEPARATOR"
 fi

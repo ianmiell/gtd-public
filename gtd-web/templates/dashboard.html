@@ -1,0 +1,17 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{.Title}}</title>
+  {{template "css.html" .}}
+</head>
+<body>
+  {{template "header.html" .}}
+  <h1>{{.Title}}</h1>
+  {{if .Result}}
+  <h2>Command Result</h2>
+  <pre>{{.Result}}</pre>
+  {{end}}
+</body>
+</html>
+

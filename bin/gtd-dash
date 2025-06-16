@@ -1,38 +1,43 @@
 #!/bin/bash
 source ./gtd-call-check
-source ./gtd-check-git-clean
 
 set +e
 echo '================================================================================'
-echo 'PRIORITY TASKS TODO'
-${ROOT_FOLDER}/bin/gtd p
+"${ROOT_FOLDER}"/bin/gtd p
 if [[ $? != '10' ]]
 then
-	echo 'Enter to continue'
-	read -r
+	enter_to_continue
 fi
 echo '================================================================================'
-echo 'NON-PRIORITY TASKS TODO'
-${ROOT_FOLDER}/bin/gtd np
+"${ROOT_FOLDER}"/bin/gtd np
 if [[ $? != '10' ]]
 then
-	echo 'Enter to continue'
-	read -r
+	enter_to_continue
 fi
 echo '================================================================================'
-${ROOT_FOLDER}/bin/gtd waiting
+"${ROOT_FOLDER}"/bin/gtd lp
 if [[ $? != '10' ]]
 then
-	echo 'Enter to continue'
-	read -r
+	enter_to_continue
 fi
 echo '================================================================================'
-${ROOT_FOLDER}/bin/gtd background
+"${ROOT_FOLDER}"/bin/gtd background
 if [[ $? != '10' ]]
 then
-	echo 'Enter to continue'
-	read -r
+	enter_to_continue
 fi
 echo '================================================================================'
-${ROOT_FOLDER}/bin/gtd someday
+"${ROOT_FOLDER}"/bin/gtd waiting
+if [[ $? != '10' ]]
+then
+	enter_to_continue
+fi
+echo '================================================================================'
+"${ROOT_FOLDER}"/bin/gtd reminders
+if [[ $? != '10' ]]
+then
+	enter_to_continue
+fi
+echo '================================================================================'
+"${ROOT_FOLDER}"/bin/gtd someday
 set -e

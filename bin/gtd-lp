@@ -1,0 +1,17 @@
+#!/bin/bash
+source ./gtd-call-check
+
+LOW_PRIORITY_ISSUES=$(comm -1 -2 <(ls "${ROOT_FOLDER}/${STATUS_FOLDER}/${TODO_STATUS}") <(ls "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${LOW_PRIORITY}/"))
+
+if [[ "${LOW_PRIORITY_ISSUES}" == '' ]]
+then
+    echo "No issues in priority: ${LOW_PRIORITY}"
+else
+	echo "Low priority:"
+	output=
+	for issue in ${LOW_PRIORITY_ISSUES}
+	do
+	    output="${output}\n${issue}${GTD_OUTPUT_SEPARATOR} $(head -1 "${ROOT_FOLDER}/${TASKS_FOLDER}/${issue}/${NOTES_FILE}" | sed 's/# //')"
+	done
+	echo -e "$output" | column -t -s "${GTD_OUTPUT_SEPARATOR}"
+fi
