@@ -119,7 +119,8 @@ if [ -f "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" ]
 then
 	if ! git fetch origin master >/dev/null 2>&1
 	then
-		embolden 'GIT FETCH FAILED\n'
+		true
+		#embolden 'GIT FETCH FAILED\n'
 	else
 		GTD_CONNECTED=1
 	fi
@@ -133,6 +134,7 @@ elif [[ -z $(git status --porcelain --untracked-files=no) ]]; then
 	# No local changes
 	if ! git rebase origin master >/dev/null 2>&1
 	then
-		embolden 'GIT REBASE FAILED\n'
+		true
+		#embolden 'GIT REBASE FAILED\n'
 	fi
 fi
