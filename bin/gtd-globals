@@ -1,13 +1,10 @@
 #!/bin/bash
-readonly LAST_TASK_NO_FILE='.metadata/lasttask' TASKS_FOLDER='tasks' STATUS_FOLDER='status' BACKGROUND_STATUS='background' CLOSED_STATUS='closed' NEW_STATUS='new' SOMEDAY_STATUS='someday' TODO_STATUS='todo' WAITING_STATUS='waiting' PRIORITY_FOLDER='priority' MEETINGS_FOLDER='meetings' LOW_PRIORITY='low' MEDIUM_PRIORITY='medium' HIGH_PRIORITY='high' DEFAULT_PRIORITY='medium' DEFAULT_STATUS='todo' OLD_JIRA_FOLDER='jira_old' PEOPLE_FOLDER='people' NOTES_FILE='notes.md' REMINDME_FILE='.remindme' REMINDME_REPEAT_FILE='.repeat' BIRTHDAY_FILE='.birthday' CREATED_DATE_FILE='.created_date' GTD_OUTPUT_SEPARATOR="±" GTD_OFFLINE_FILENAME='.gtd_offline' GTD_OFFLINE_SEPARATOR='++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-
-# export readonlys
-export LAST_TASK_NO_FILE TASKS_FOLDER STATUS_FOLDER BACKGROUND_STATUS CLOSED_STATUS NEW_STATUS SOMEDAY_STATUS TODO_STATUS WAITING_STATUS PRIORITY_FOLDER LOW_PRIORITY MEDIUM_PRIORITY HIGH_PRIORITY DEFAULT_STATUS DEFAULT_PRIORITY OLD_JIRA_FOLDER PEOPLE_FOLDER NOTES_FILE REMINDME_FILE REMINDME_REPEAT_FILE BIRTHDAY_FILE CREATED_DATE_FILE GTD_OUTPUT_SEPARATOR MEETINGS_FOLDER GTD_OFFLINE_FILENAME GTD_OFFLINE_SEPARATOR
-
-# export other
-export GTD_CONNECTED GO_TO_TASK
+readonly LAST_TASK_NO_FILE='.metadata/lasttask' TASKS_FOLDER='tasks' STATUS_FOLDER='status' BACKGROUND_STATUS='background' CLOSED_STATUS='closed' NEW_STATUS='new' SOMEDAY_STATUS='someday' TODO_STATUS='todo' WAITING_STATUS='waiting' PRIORITY_FOLDER='priority' MEETINGS_FOLDER='meetings' LOW_PRIORITY='low' MEDIUM_PRIORITY='medium' HIGH_PRIORITY='high' DEFAULT_PRIORITY='medium' DEFAULT_STATUS='todo' OLD_JIRA_FOLDER='jira_old' PEOPLE_FOLDER='people' NOTES_FILE='notes.md' REMINDME_FILE='.remindme' REMINDME_REPEAT_FILE='.repeat' BIRTHDAY_FILE='.birthday' CREATED_DATE_FILE='.created_date' GTD_OUTPUT_SEPARATOR="±" GTD_OFFLINE_FILENAME='.gtd_offline' GTD_OFFLINE_SEPARATOR='++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++' GTD_HOST="${HOST:-${HOSTNAME:-$(hostname -s)}}"
 
 : "${GTD_DISPLAY_CONTEXT:=terminal}"
+readonly LAST_PULL_FILENAME=".gtd_last_pull_time_${GTD_HOST}"
+
+export LAST_TASK_NO_FILE TASKS_FOLDER STATUS_FOLDER BACKGROUND_STATUS CLOSED_STATUS NEW_STATUS SOMEDAY_STATUS TODO_STATUS WAITING_STATUS PRIORITY_FOLDER LOW_PRIORITY MEDIUM_PRIORITY HIGH_PRIORITY DEFAULT_STATUS DEFAULT_PRIORITY OLD_JIRA_FOLDER PEOPLE_FOLDER NOTES_FILE REMINDME_FILE REMINDME_REPEAT_FILE BIRTHDAY_FILE CREATED_DATE_FILE GTD_OUTPUT_SEPARATOR MEETINGS_FOLDER GTD_OFFLINE_FILENAME GTD_OFFLINE_SEPARATOR STATUS_WAITING_DAYS SEARCH_TERM MOVE_TO_STATUS GTD_CONNECTED GO_TO_TASK LAST_PULL_FILENAME GTD_DISPLAY_CONTEXT GTD_HOST
 
 function is_num {
 	if [[ "${1}" =~ ^[0-9]+$ ]]
@@ -66,18 +63,66 @@ function embolden {
 	fi
 }
 
+function wipe_line {
+	if [[ ${GTD_DISPLAY_CONTEXT} == 'terminal' ]]
+	then
+		echo -ne "\r\033[K"
+	fi
+}
+
+# This function calculates the time difference between the current time and a target epoch time, echoing a description of the difference.
+function time_diff_desc {
+	target_epoch="${1}"
+	now=$(gdate +%s || date +%s)
+	diff=$((target_epoch - now))
+
+	if ((diff <= 0)); then
+		# negate the value
+		diff=$(( -diff ))
+	fi
+	days=$((diff / 86400))
+	hours=$(( (diff % 86400) / 3600 ))
+	minutes=$(( (diff % 3600) / 60 ))
+
+	output=""
+	(( days > 0 )) && output+="$days days "
+	(( hours > 0 )) && output+="$hours hours, "
+	#(( minutes > 0 )) && output+="$minutes minutes "
+
+	echo "$output"
+}
+
+# This function parses a date from a string representing seconds since epoch and formats it to a human-readable format.
 function parse_date {
 	date -d @"${1}" '+%d %b %Y, %H:%M' 2>/dev/null || gdate -d @"${1}" '+%d %b %Y, %H:%M'
 }
 
-function show_git_status {
-	git status -s | tail
+function last_pull_check {
+	if [[ ! -f "${ROOT_FOLDER}/${LAST_PULL_FILENAME}" ]]
+	then
+		touch "${ROOT_FOLDER}/${LAST_PULL_FILENAME}"
+		DATE=$(date +%s) || DATE=$(gdate +%s)
+		echo "${DATE}" > "${ROOT_FOLDER}/${LAST_PULL_FILENAME}"
+	else
+		LAST_PULL_TIME=$(cat "$ROOT_FOLDER/${LAST_PULL_FILENAME}")
+		local current_time
+		current_time=$(date +%s) || current_time=$(gdate +%s)
+		if [[ $current_time -gt $((LAST_PULL_TIME + 3)) ]]
+		then
+			DATE=$(date +%s) || DATE=$(gdate +%s)
+			echo "${DATE}" > "${ROOT_FOLDER}/${LAST_PULL_FILENAME}"
+			echo -n Pulling gtd from remote...
+			git_pull >/dev/null 2>&1 || true
+			wipe_line
+		fi
+	fi
 }
+
 
 function enter_to_continue {
 	if [[ "${GTD_DISPLAY_CONTEXT}" == terminal ]]
 	then
-		echo 'Enter to continue'
+		echo -n 'Enter to continue'
     	read -r
 	fi
 }
@@ -86,7 +131,7 @@ function git_pull {
 	echo -n "Pulling git repo..."
 	has_connection || exit 1
 	git pull --rebase >/dev/null 2>&1
-	echo "done"
+	wipe_line
 }
 
 function git_commit {
@@ -94,20 +139,21 @@ function git_commit {
 	has_connection || exit 1
 	echo -n "Committing git repo with message: ${MSG}..."
 	git commit -am "$MSG" >/dev/null 2>&1
-	echo "done"
+	wipe_line
 }
 
 function git_push {
 	echo -n "Pushing git repo..."
 	has_connection || exit 1
 	git push >/dev/null 2>&1
-	echo "done"
+	wipe_line
 }
 
 function has_connection {
 	# Wait a second, suppress output, be quiet and stop after first byte
-	if timeout "0.5" curl -s --max-time 5 --output /dev/null --range 0-0 https://www.google.com
+	if [[ $GTD_CONNECTED == 1 ]] || timeout "1" curl -s --max-time 5 --output /dev/null --range 0-0 https://www.google.com
 	then
+		GTD_CONNECTED=1
 		return 0
 	fi
 	echo "Offline, returning 1"
@@ -117,24 +163,14 @@ function has_connection {
 # Fetch and rebase
 if [ -f "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" ]
 then
-	if ! git fetch origin master >/dev/null 2>&1
+	if git fetch origin master >/dev/null 2>&1
 	then
-		true
-		#embolden 'GIT FETCH FAILED\n'
-	else
 		GTD_CONNECTED=1
 	fi
 fi
 
-if ! git diff --exit-code 2>/dev/null 1>&2
+if git diff --exit-code 2>/dev/null 1>&2 && [[ -z $(git status --porcelain --untracked-files=no) ]]
 then
-        # embolden 'GIT REPO CONTAINS A DIFF\n'
-	:
-elif [[ -z $(git status --porcelain --untracked-files=no) ]]; then
 	# No local changes
-	if ! git rebase origin master >/dev/null 2>&1
-	then
-		true
-		#embolden 'GIT REBASE FAILED\n'
-	fi
+	git rebase origin master >/dev/null 2>&1
 fi

@@ -27,7 +27,7 @@ then
 	enter_to_continue
 fi
 echo '================================================================================'
-"${ROOT_FOLDER}"/bin/gtd waiting
+"${ROOT_FOLDER}"/bin/gtd waiting 7
 if [[ $? != '10' ]]
 then
 	enter_to_continue

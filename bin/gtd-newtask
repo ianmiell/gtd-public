@@ -2,7 +2,7 @@
 source ./gtd-call-check
 
 set +u
-if [[ "${1}" == "" ]]
+if [[ "${2}" == "" ]]
 then
 	echo "Argument required to gtd-newtask - subject"
 	echo ""
@@ -12,7 +12,7 @@ set -u
 set +o pipefail
 
 # TODO: does the logic in this section make sense? could it be quicker?
-SUBJECT="${1}"
+SUBJECT="${2}"
 GO_TO_TASK="${GO_TO_TASK:=Y}"
 
 function gtd_capture_newtask_offline {
@@ -61,7 +61,6 @@ git add "${NEW_TASKFOLDER}"
 git add "${ROOT_FOLDER}/${PRIORITY_FOLDER}/${DEFAULT_PRIORITY}/${NEW_TASK_NO}"
 git add "${ROOT_FOLDER}/${STATUS_FOLDER}/${DEFAULT_STATUS}/${NEW_TASK_NO}"
 git add "${ROOT_FOLDER}/${LAST_TASK_NO_FILE}"
-##show_git_status
 
 git_commit "newtask after ${NEW_TASK_NO}"
 git_push || gtd pull --rebase

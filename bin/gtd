@@ -68,7 +68,7 @@ then
 	source ./gtd-help
 fi
 
-if [[ "${GTD_CONNECTED}" == 1 && -f "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" ]]
+if has_connection && [[ -f "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" ]]
 then
 	filename="${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}".tmp
 	mv "${ROOT_FOLDER}/${GTD_OFFLINE_FILENAME}" "${filename}"
@@ -101,20 +101,43 @@ fi
 
 # SHELL OPTIONS
 # Error if vars unset from here, after validation
-set -o nounset
-set -o errexit
+GTD_ARG="${1}"
+if [[ ${GTD_ARG} =~ w.* ]]
+then
+	STATUS_WAITING_DAYS="${2:-9999999}"
+else
+	STATUS_WAITING_DAYS="9999999"
+fi
+if [[ ${GTD_ARG} == search ]]
+then
+	SEARCH_TERM="${2}"
+fi
+if [[ ${GTD_ARG} == close ]]
+then
+	export TASK_TO_CLOSE="${2}"
+fi
+if [[ ${GTD_ARG} =~ m.* ]]
+then
+	MOVE_TO_STATUS="${2}"
+fi
+
+set -o nounset -o errexit
 
 # if file does not exist, call gtd-help
-GTD_ARG="${1}"
+last_pull_check
+
 # If the arg is just a number, then go to it.
 if [[ $(is_num "${1}") == "0" ]]
 then
 	source gtd-go "${GTD_ARG}"
 elif [[ -a gtd-${GTD_ARG} ]]
 then
+	# If the command exists, run it
 	# shellcheck source=/dev/null
-	source ./gtd-"$@"
+	source ./gtd-"${GTD_ARG}"
 else
-	"${ROOT_FOLDER}"/bin/gtd search "${1}"
-	cleanup
+	# Otherwise, assume the command is a search term
+	SEARCH_TERM="${GTD_ARG}"
+	source ./gtd-search
 fi
+cleanup

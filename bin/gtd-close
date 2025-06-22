@@ -8,18 +8,10 @@ function usage {
 	echo ""
 }
 
-# Process args
-set +u
-if [[ "${1}" == "" ]]
-then
-	echo "Argument required to gtd-mv - task number"
-	usage
-fi
-
 set -u
+
 while [[ $# -gt 0 ]]
 do
-	TASK_TO_CLOSE="${1}"
 	assert_is_num "${TASK_TO_CLOSE}"
 	if grep -w TODO "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_TO_CLOSE}/"*
 	then
@@ -27,8 +19,10 @@ do
 	    grep -lw TODO "${ROOT_FOLDER}/${TASKS_FOLDER}/${TASK_TO_CLOSE}"/*
 		exit 1
 	fi
-	"${ROOT_FOLDER}"/bin/gtd move-status closed "${TASK_TO_CLOSE}"
+	"${ROOT_FOLDER}"/bin/gtd move-status closed "${TASK_TO_CLOSE}" || exit 1
 	shift
 done
 
 git add "${ROOT_FOLDER}"
+
+echo "Closed task ${TASK_TO_CLOSE}"

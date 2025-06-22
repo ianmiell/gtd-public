@@ -1,16 +1,6 @@
 #!/bin/bash
 source ./gtd-call-check
 
-set +u
-if [[ "${1}" == "" ]]
-then
-	echo "Argument required to gtd-newtask - search term"
-	echo ""
-	sleep 2 && ./gtd-help
-fi
-set -u
-SEARCH_TERM="${1}"
-
 set +o errexit
 
 embolden '================================================================================\n'

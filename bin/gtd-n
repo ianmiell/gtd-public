@@ -1,9 +1,6 @@
 #!/bin/bash
 source ./gtd-call-check
 
-#echo "ARG 1: ${1:-""}"
-#echo "ARG 2: ${2:-""}"
-
 case ${1} in
   b) STATUS="background";;
   background) STATUS="background";;
@@ -32,8 +29,9 @@ esac
 STATUS_UPPER="$(echo ${STATUS} | tr '[:lower:]' '[:upper:]')"
 readonly STATUS_UPPER
 
-RESULT="$(ls "${ROOT_FOLDER}/${STATUS_FOLDER}/${STATUS}"/*/"${NOTES_FILE}" 2> /dev/null)"
+RESULT="$(ls "${ROOT_FOLDER}/${STATUS_FOLDER}/${STATUS}"/*/"${NOTES_FILE}" 2> /dev/null | sed "s@${ROOT_FOLDER}/${STATUS_FOLDER}/${STATUS}/\([0-9]*\).*@\1@" | sort -n)"
 readonly RESULT
+MAX_ID="$(echo "$RESULT" | sort -n | tail -n 1)"
 if [[ ${RESULT} == '' ]]
 then
 	echo "No tasks in status: ${STATUS_UPPER}"
@@ -41,8 +39,11 @@ then
 else
 	echo "Tasks in ${STATUS_UPPER} status"
 	output=
-	for task_file in $RESULT
+	for task_no in $RESULT
 	do
+		task_file="${ROOT_FOLDER}/${STATUS_FOLDER}/${STATUS}/${task_no}/${NOTES_FILE}"
+		wipe_line
+		echo -n "Processing ${task_no}/$MAX_ID"
 		if [[ "$task_file" =~ .*/([0-9]*)/${NOTES_FILE} ]]
 		then
 			THIS_TASK_NO="${BASH_REMATCH[1]}"
@@ -50,16 +51,23 @@ else
 			output="${output}\nTask number not matched for file: ${task_file}"
 		fi
 		THIS_TASK_FOLDER="${ROOT_FOLDER}/${TASKS_FOLDER}/${THIS_TASK_NO}"
-		output="${output}\n${THIS_TASK_NO}${GTD_OUTPUT_SEPARATOR} $(head -1 "${task_file}" | sed 's/# //')"
 		if [[ -a "${THIS_TASK_FOLDER}/${REMINDME_FILE}" ]]
 		then
 			REMIND_DATE="$(cat "${THIS_TASK_FOLDER}/${REMINDME_FILE}")"
+			if [[ $REMIND_DATE -gt $(gdate -d "+${STATUS_WAITING_DAYS} days" +%s) ]]
+			then
+				continue
+			fi
+			output="${output}\n${THIS_TASK_NO}${GTD_OUTPUT_SEPARATOR} $(head -1 "${task_file}" | sed 's/# //')"
 			output="${output}${GTD_OUTPUT_SEPARATOR} Reminder at: $(parse_date "${REMIND_DATE}")"
 			if [[ -a "${THIS_TASK_FOLDER}/${REMINDME_REPEAT_FILE}" ]]
 			then
 				output="${output}, repeated every $(cat "${THIS_TASK_FOLDER}/${REMINDME_REPEAT_FILE}") days"
 			fi
+		else
+			output="${output}\n${THIS_TASK_NO}${GTD_OUTPUT_SEPARATOR} $(head -1 "${task_file}" | sed 's/# //')"
 		fi
 	done
+	wipe_line
 	echo -e "$output" | column -t -s "${GTD_OUTPUT_SEPARATOR}"
 fi

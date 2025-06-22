@@ -5,8 +5,9 @@ echo "COMMANDS"
 echo ""
 echo "TASK MANAGEMENT"
 echo "  nt/newtask 'SUBJECT' - create new task with subject SUBJECT"
-echo "  go TASKID            - place me in folder for TASKID"
-echo "  show TASKID          - summarize contents of TASKID for me"
+echo "  g/go TASKID          - place me in folder for TASKID"
+echo "  s/show TASKID        - summarize contents of TASKID for me"
+echo "  e/edit TASKID [FILE] - edit file in Obsidian for TASKID, defaults to 'notes.md'
 echo "  TASKID               - place me in folder for TASKID"
 echo ""
 
@@ -17,10 +18,10 @@ echo "  defer TASKID                     - move task TASKID to 'waiting' and rem
 echo ""
 
 echo "TASK LISTING"
-echo "  d/dash/dashboard - dashboard of tickets"
-echo "  p    - list tickets in high priority"
-echo "  np   - list tickets in non/medium priority"
-echo "  lp   - list tickets in low priority todo"
+echo "  d/dash/dashboard     - dashboard of tickets"
+echo "  p                    - list tickets in high priority"
+echo "  np                   - list tickets in non/medium priority"
+echo "  lp                   - list tickets in low priority todo"
 echo "  todos                - give a report on which tasks have TODOs in them"
 echo ""
 

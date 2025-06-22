@@ -10,19 +10,15 @@ function usage {
 
 # Process args
 set +o nounset
-if [[ "${1}" == "" ]]
-then
-	echo "Argument required to gtd-mv - newstatus"
-	usage
-fi
-MOVE_TO_STATUS="$(convert_to_shortname "${1}")"
+MOVE_TO_STATUS="$(convert_to_shortname "${MOVE_TO_STATUS}")"
 readonly MOVE_TO_STATUS
-if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${2}" == "" ]]
+
+if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${3}" == "" ]]
 then
 	echo "Argument required to gtd-mv - task_no"
 	usage
 fi
-readonly WORKING_TASK_NO="${2}"
+readonly WORKING_TASK_NO="${3}"
 # Check arg 3 is a number and task exists
 assert_is_num "${WORKING_TASK_NO}"
 if [[ ! -d "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}" ]]
@@ -40,6 +36,7 @@ OLD_STATUS=
 if [[ ${OLD_STATUS} == "${MOVE_TO_STATUS}" ]]
 then
 	echo "Old status is the same as the new status"
+	exit 1
 else
 	# If the current status == new status
 	# find current status, mv it to new one
@@ -51,6 +48,5 @@ fi
 
 # Commit and push
 git add "${ROOT_FOLDER}"
-show_git_status
 
 gtd-check-consistent

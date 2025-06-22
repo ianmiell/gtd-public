@@ -1,0 +1,29 @@
+#!/bin/bash
+source ./gtd-call-check
+
+set +u
+if [[ "${2}" == "" ]]
+then
+	echo "Argument required to gtd-go - task number"
+	echo ""
+	sleep 2 && ./gtd-help
+fi
+if [[ "${3}" == "" ]]
+then
+	EDIT_FILE="notes.md"
+else
+	EDIT_FILE="${3}"
+fi
+readonly GOTO_TASK_NO="${2}"
+assert_is_num "${GOTO_TASK_NO}"
+set -u
+FULL_FILENAME="${TASKS_FOLDER}/${GOTO_TASK_NO}/${EDIT_FILE}"
+echo $FULL_FILENAME
+if [ ! -f ${ROOT_FOLDER}/${FULL_FILENAME} ]
+then
+	echo "File ${FULL_FILENAME} does not exist, creating"
+	touch "${ROOT_FOLDER}/$FULL_FILENAME"
+fi
+
+echo Opening task "${GOTO_TASK_NO}" in Obsidian...
+open "obsidian://open?vault=gtd&file=${FULL_FILENAME}"

@@ -11,13 +11,13 @@ git_commit 'cron commit' || true
 git fetch origin master || (gtd newtask "gtd-check-reminders on $(hostname) is broken at $(date)")
 git rebase origin/master || (gtd newtask "gtd-check-reminders on $(hostname) is broken at $(date)")
 # Get all the remindme files
-echo for file in "${ROOT_FOLDER}/${TASKS_FOLDER}/"*"/${REMINDME_FILE}"
 for file in "${ROOT_FOLDER}/${TASKS_FOLDER}/"*"/${REMINDME_FILE}"
 do
+	echo "$file"
 	if [[ "$(date +%s)" -gt "$(cat "${file}")" ]]
 	then
 		# Extract the task number
-		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/'${REMINDME_FILE}'/\1/')"
+		TASK_NO="$(echo "${file}" | sed 's/.*tasks.\([0-9]*\)\/'"${REMINDME_FILE}"'/\1/')"
 		OVERDUE_ON="$(date -d "@$(cat "${file}")")"
 		echo "${TASK_NO} overdue on ${OVERDUE_ON}"
 		# Ignore closed files iff there are no repeat files

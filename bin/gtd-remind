@@ -9,14 +9,14 @@ function usage {
 }
 
 set +o nounset
-if [[ "${1}" == '' ]]
+if [[ "${2}" == '' ]]
 then
 	usage
 	exit 1
 fi
 set -o nounset
 
-readonly TASK_NO="${1}"
+readonly TASK_NO="${2}"
 
 echo 'Input number of days in future to remind'
 read -r DAYS_IN_FUTURE

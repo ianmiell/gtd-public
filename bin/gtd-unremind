@@ -30,6 +30,5 @@ rm -f "${ROOT_FOLDER}/${TASKS_FOLDER}/${WORKING_TASK_NO}/${REMINDME_REPEAT_FILE}
 
 # Commit and push
 git add "${ROOT_FOLDER}"
-show_git_status
 
 gtd-check-consistent

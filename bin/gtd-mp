@@ -9,19 +9,20 @@ function usage {
 
 # Process args
 set +o nounset
+
 if [[ "${1}" == "" ]]
 then
 	echo "Argument required to gtd-mv - newpriority"
 	usage
 fi
-NEW_PRIORITY="$(convert_to_shortname "${1}")"
+NEW_PRIORITY="$(convert_to_shortname "${2}")"
 readonly NEW_PRIORITY
-if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${2}" == "" ]]
+if [[ "${WORKING_TASK_NO}" == "" ]] && [[ "${3}" == "" ]]
 then
 	echo "Argument required to gtd-mv - task_no"
 	usage
 fi
-WORKING_TASK_NO="${2}"
+WORKING_TASK_NO="${3}"
 readonly WORKING_TASK_NO
 # Check arg 3 is a number and task exists
 assert_is_num "${WORKING_TASK_NO}"

@@ -10,3 +10,4 @@ then
 fi
 
 git_pull || ( gtd commit && git_pull )
+echo All good
